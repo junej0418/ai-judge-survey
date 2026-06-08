@@ -1,0 +1,82 @@
+# ai-judge-survey
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore,
+  doc,
+  runTransaction
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBD56fuUM8NNL3DNKM28BKZgmMsPELfyI8",
+  authDomain: "ai-judge-survey.firebaseapp.com",
+  projectId: "ai-judge-survey",
+  storageBucket: "ai-judge-survey.firebasestorage.app",
+  messagingSenderId: "97091365627",
+  appId: "1:97091365627:web:d8ab95e2fe2e9876fb1e5e"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const forms = {
+  A: "https://forms.gle/2T3DH8ky1mTEUcr1A",
+  B: "https://forms.gle/KxJY4VQj5yD1T31b9",
+  C: "https://forms.gle/sXXXZTLZiiDon4SZ8",
+  D: "https://forms.gle/9tjtghQG51HfHvam9"
+};
+
+// 중복 클릭 방지
+if (localStorage.getItem("done") === "1") {
+  document.body.innerHTML = "이미 배정 완료됨";
+} else {
+  redirectUser();
+}
+
+async function redirectUser() {
+
+  const ref = doc(db, "counts", "groups");
+
+  const chosenGroup = await runTransaction(db, async (transaction) => {
+
+    const snap = await transaction.get(ref);
+    const data = snap.data();
+
+    // 최소값 찾기
+    const min = Math.min(data.A, data.B, data.C, data.D);
+
+    // 최소 그룹들 모음
+    const candidates = [];
+    ["A","B","C","D"].forEach(g => {
+      if (data[g] === min) candidates.push(g);
+    });
+
+    // 랜덤 선택
+    const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+
+    // 카운트 증가
+    transaction.update(ref, {
+      [chosen]: data[chosen] + 1
+    });
+
+    return chosen;
+  });
+
+  localStorage.setItem("done", "1");
+
+  window.location.replace(forms[chosenGroup]);
+}
+
+</script>
+</head>
+
+<body>
+잠시만 기다려주세요...
+</body>
+</html>
