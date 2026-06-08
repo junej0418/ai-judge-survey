@@ -32,12 +32,7 @@ const forms = {
   D: "https://forms.gle/9tjtghQG51HfHvam9"
 };
 
-// 중복 클릭 방지
-if (localStorage.getItem("done") === "1") {
-  document.body.innerHTML = "이미 배정 완료됨";
-} else {
-  redirectUser();
-}
+
 
 async function redirectUser() {
 
@@ -68,7 +63,7 @@ async function redirectUser() {
     return chosen;
   });
 
-  localStorage.setItem("done", "1");
+
 
   window.location.replace(forms[chosenGroup]);
 }
