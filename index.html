@@ -1,18 +1,15 @@
-# ai-judge-survey
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8" />
+<title>Survey Redirect</title>
 
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {
-  getFirestore,
-  doc,
-  runTransaction
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import { getFirestore, doc, runTransaction } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
+/* 🔥 Firebase 설정 (이미 너가 준 값 반영됨) */
 const firebaseConfig = {
   apiKey: "AIzaSyBD56fuUM8NNL3DNKM28BKZgmMsPELfyI8",
   authDomain: "ai-judge-survey.firebaseapp.com",
@@ -22,9 +19,11 @@ const firebaseConfig = {
   appId: "1:97091365627:web:d8ab95e2fe2e9876fb1e5e"
 };
 
+/* Firebase 초기화 */
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+/* 🔥 Google Form 링크 */
 const forms = {
   A: "https://forms.gle/2T3DH8ky1mTEUcr1A",
   B: "https://forms.gle/KxJY4VQj5yD1T31b9",
@@ -32,43 +31,60 @@ const forms = {
   D: "https://forms.gle/9tjtghQG51HfHvam9"
 };
 
-
-
+/* 🔥 배정 함수 */
 async function redirectUser() {
 
-  const ref = doc(db, "counts", "groups");
+  try {
 
-  const chosenGroup = await runTransaction(db, async (transaction) => {
+    const ref = doc(db, "counts", "groups");
 
-    const snap = await transaction.get(ref);
-    const data = snap.data();
+    const chosen = await runTransaction(db, async (transaction) => {
 
-    // 최소값 찾기
-    const min = Math.min(data.A, data.B, data.C, data.D);
+      const snap = await transaction.get(ref);
 
-    // 최소 그룹들 모음
-    const candidates = [];
-    ["A","B","C","D"].forEach(g => {
-      if (data[g] === min) candidates.push(g);
+      if (!snap.exists()) {
+        throw new Error("Firestore 문서 없음 (counts/groups 확인 필요)");
+      }
+
+      const data = snap.data();
+
+      // 숫자 강제 변환 (안전장치)
+      const A = Number(data.A);
+      const B = Number(data.B);
+      const C = Number(data.C);
+      const D = Number(data.D);
+
+      const min = Math.min(A, B, C, D);
+
+      const candidates = [];
+      if (A === min) candidates.push("A");
+      if (B === min) candidates.push("B");
+      if (C === min) candidates.push("C");
+      if (D === min) candidates.push("D");
+
+      const pick = candidates[Math.floor(Math.random() * candidates.length)];
+
+      transaction.update(ref, {
+        [pick]: Number(data[pick]) + 1
+      });
+
+      return pick;
     });
 
-    // 랜덤 선택
-    const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+    // 이동
+    window.location.replace(forms[chosen]);
 
-    // 카운트 증가
-    transaction.update(ref, {
-      [chosen]: data[chosen] + 1
-    });
-
-    return chosen;
-  });
-
-
-
-  window.location.replace(forms[chosenGroup]);
+  } catch (err) {
+    console.error(err);
+    document.body.innerHTML = "오류 발생: " + err.message;
+  }
 }
 
+/* 실행 */
+redirectUser();
+
 </script>
+
 </head>
 
 <body>
